@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<title>Защита ВКР — АнтиФиш</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0E1726;
+    --ink-2:#2A3447;
+    --muted:#6B7689;
+    --line:#D9DEE7;
+    --line-2:#EAEDF3;
+    --paper:#F7F8FB;
+    --bg:#FFFFFF;
+    --accent:#1E3A8A;
+    --accent-2:#2F58CD;
+    --accent-soft:#E7ECF8;
+    --danger:#B0203A;
+    --safe:#1F7A4D;
+  }
+  html,body{margin:0;padding:0;background:#0a0d12;color:var(--ink);font-family:'Inter',system-ui,sans-serif;}
+  deck-stage{background:#0a0d12;}
+  section{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Inter',system-ui,sans-serif;
+    overflow:hidden;
+    position:relative;
+  }
+  .chrome{
+    position:absolute; inset:0;
+    padding: 80px 96px 72px 96px;
+    display:flex; flex-direction:column;
+    box-sizing:border-box;
+  }
+  .corner{
+    position:absolute; top:36px; right:48px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:24px; color:var(--muted);
+    letter-spacing:.04em;
+  }
+  .corner b{color:var(--ink); font-weight:600;}
+  .topline{
+    position:absolute; top:36px; left:96px; right:160px;
+    height:2px; background:linear-gradient(90deg, var(--accent) 0 80px, var(--line) 80px 100%);
+  }
+  .eyebrow{
+    font-family:'JetBrains Mono',monospace;
+    font-size:24px; letter-spacing:.18em; text-transform:uppercase;
+    color:var(--accent); font-weight:500;
+    margin:0 0 18px 0;
+  }
+  .title{
+    font-family:'Source Serif 4',serif;
+    font-weight:600;
+    font-size:72px; line-height:1.05;
+    margin:0 0 8px 0; color:var(--ink);
+    letter-spacing:-.01em;
+  }
+  .subtitle{
+    font-size:32px; line-height:1.35;
+    color:var(--ink-2); font-weight:400;
+    max-width:1180px;
+  }
+  .body{font-size:30px; line-height:1.45; color:var(--ink-2);}
+  .small{font-size:24px; color:var(--muted);}
+  .mono{font-family:'JetBrains Mono',monospace;}
+
+  .fade-item{opacity:0; transform:translateY(14px); transition:opacity .55s ease, transform .55s ease;}
+  section.is-active .fade-item{opacity:1; transform:none;}
+  section.is-active .fade-item.d1{transition-delay:.10s}
+  section.is-active .fade-item.d2{transition-delay:.22s}
+  section.is-active .fade-item.d3{transition-delay:.34s}
+  section.is-active .fade-item.d4{transition-delay:.46s}
+  section.is-active .fade-item.d5{transition-delay:.58s}
+  section.is-active .fade-item.d6{transition-delay:.70s}
+  section.is-active .fade-item.d7{transition-delay:.82s}
+  section.is-active .fade-item.d8{transition-delay:.94s}
+
+  .grow-bar{transform-origin:left center; transform:scaleX(0); transition:transform 1.2s cubic-bezier(.2,.7,.2,1);}
+  section.is-active .grow-bar{transform:scaleX(1);}
+  section.is-active .grow-bar.d1{transition-delay:.25s}
+  section.is-active .grow-bar.d2{transition-delay:.40s}
+  section.is-active .grow-bar.d3{transition-delay:.55s}
+  section.is-active .grow-bar.d4{transition-delay:.70s}
+  section.is-active .grow-bar.d5{transition-delay:.85s}
+
+  .zoom-in{transform:scale(.98); opacity:0; transition:transform .7s ease, opacity .7s ease;}
+  section.is-active .zoom-in{transform:scale(1); opacity:1; transition-delay:.20s;}
+
+  .rule{height:1px; background:var(--line); width:100%;}
+
+  .wordmark{display:inline-flex; align-items:center; gap:14px;}
+  .wordmark .glyph{
+    width:54px; height:54px; border-radius:12px;
+    background:var(--accent); color:#fff;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Source Serif 4',serif; font-weight:600; font-size:32px;
+    box-shadow:inset 0 -6px 0 rgba(0,0,0,.18);
+    position:relative;
+  }
+  .wordmark .glyph::after{
+    content:""; position:absolute; inset:6px; border:1.5px solid rgba(255,255,255,.45); border-radius:8px;
+  }
+  .wordmark .name{font-family:'Source Serif 4',serif; font-weight:600; font-size:40px; color:var(--ink);}
+  .wordmark .name em{font-style:normal; color:var(--accent);}
+
+  .image-card{
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:8px;
+    box-shadow:0 6px 24px rgba(14,23,38,.06), 0 1px 0 rgba(14,23,38,.03);
+    overflow:hidden;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .image-card img{display:block; max-width:100%; max-height:100%; width:auto; height:auto;}
+  .image-card.contain{padding:18px;}
+  .image-card.fill{padding:0;}
+  .image-card.fill img{width:100%; height:100%; max-width:none; max-height:none; object-fit:contain;}
+</style>
+</head>
+<body>
+
+<script type="application/json" id="speaker-notes">
+[
+"Уважаемый председатель, уважаемые члены комиссии. Вашему вниманию представляется выпускная квалификационная работа на тему: «Разработка расширения браузера для защиты от фишинговых атак с применением искусственного интеллекта». Автор – Назаров Андрей Алексеевич, научный руководитель – доцент кафедры ИБС, кандидат физико-математических наук Губенков Артем Александрович.",
+"Актуальность темы обусловлена тем, что фишинг по сей день остается одной из самых распространенных угроз в интернете. Традиционные средства защиты демонстрируют снижение точности обнаружения: даже наиболее продвинутые решения ограничиваются точностью около 83 процентов, что указывает на наличие потенциала для совершенствования существующих методов.",
+"Традиционные средства защиты на основе черных списков, сигнатур и эвристик не успевают реагировать на новые ресурсы: фишинговые сайты живут недолго, быстро меняют домены и обходят блокировки. Поэтому возникает необходимость в более адаптивном средстве, способном выявлять фишинг по совокупности подозрительных признаков, а не только по заранее известным адресам.",
+"Целью работы является разработка браузерного расширения для защиты от фишинговых атак с применением методов машинного обучения, обеспечивающего высокую точность обнаружения угроз при минимальном влиянии на производительность браузера. Для достижения цели поставлены пять задач: анализ методов фишинга и защиты, изучение нормативной базы, разработка модели и алгоритма, проектирование архитектуры, реализация прототипа и тестирование.",
+"В первом разделе рассмотрены теоретические основы. Выделены основные признаки для обнаружения: особенности URL, структура домена, подозрительные ключевые слова, формы ввода, iframe, внешние ресурсы и динамическое поведение страницы.",
+"Во втором разделе рассмотрена нормативно-правовая и методическая база. Учтены требования федеральных законов, указов Президента, постановлений Правительства, единого реестра российского ПО, а также рекомендации OWASP. На основе этих требований сформированы проектные решения: ориентация на отечественный контур, выбор Яндекс Браузера, Manifest V3, гибридная клиент-серверная схема, HTTPS, кэширование и ограниченный набор разрешений.",
+"В третьем разделе выполнена практическая разработка средства, получившего название «АнтиФиш». Это гибридное клиент-серверное решение: клиент – браузерное расширение Manifest V3, сервер – Python с Flask API и моделью машинного обучения.",
+"На схеме показана общая архитектура. События навигации браузера попадают в Service Worker расширения, который извлекает URL, проверяет кэш и при необходимости отправляет запрос к серверному REST API. Сервер обращается к ML-модели на основе XGBoost, получает классификацию и возвращает результат расширению.",
+"Алгоритм работы состоит из нескольких этапов. Сначала выполняется быстрая проверка по белому и черному спискам. Если ресурс не найден, выполняется анализ URL моделью машинного обучения. При необходимости подключается расширенный анализ содержимого страницы. По результату пользователь получает предупреждение, если ресурс классифицирован как фишинговый.",
+"Точность модели составила 96,6%, Precision – 97,2%, Recall – 96,0%, F1-score – 96,6%, коэффициент Мэтьюса – 0,933. Эти показатели превосходят точность существующих решений и подтверждают применимость выбранного подхода.",
+"Клиентская часть – попап с текущим статусом проверки, страница блокировки опасного ресурса и страница настроек с управлением чувствительностью, режимом проверки, уведомлениями и темой.",
+"Серверная часть имеет административный веб-интерфейс: дашборд состояния, управление черным и белым списками, тестер URL, а также управление API- и лицензионными ключами.",
+"Проведено тестирование основных компонентов. Все тесты пройдены успешно: прототип корректно проверяет ресурсы, отображает статус и блокирует доступ к фишингу.",
+"В пятом разделе выполнено технико-экономическое обоснование. Общие затраты на разработку – 136 936 рублей. При внедрении на 50 рабочих мест собственное решение оказалось выгоднее покупки готового аналога – экономический эффект составил 37 914 рублей.",
+"В результате цель ВКР достигнута: разработано браузерное расширение для защиты от фишинговых атак с применением методов машинного обучения. Доклад окончен, благодарю за внимание, готов ответить на ваши вопросы."
+]
+</script>
+
+<deck-stage width="1440" height="1080">
+
+  <!-- 01 TITLE -->
+  <section data-label="01 Титульный">
+    <div class="chrome" style="padding:64px 90px 56px 90px;">
+      <div class="topline"></div>
+      <div class="corner"><b>01</b> / 15</div>
+
+      <div class="fade-item d1" style="text-align:center; padding-top:24px;">
+        <div class="mono" style="font-size:24px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); line-height:1.5;">
+          СГТУ имени Гагарина Ю.А.
+        </div>
+        <div style="margin-top:10px; font-size:24px; color:var(--ink-2); line-height:1.45;">
+          Институт электронной техники и приборостроения · Кафедра ИБС
+        </div>
+      </div>
+
+      <div style="flex:1; display:flex; flex-direction:column; justify-content:center;">
+        <div class="fade-item d2 eyebrow" style="text-align:center; margin-bottom:24px;">Выпускная квалификационная работа</div>
+
+        <h1 class="fade-item d3 title" style="font-size:64px; max-width:1240px; text-align:center; margin:0 auto;">
+          Разработка расширения браузера<br/>
+          для защиты от <span style="color:var(--accent);">фишинговых атак</span><br/>
+          с применением искусственного интеллекта
+        </h1>
+
+        <div class="fade-item d4" style="margin-top:36px; display:flex; justify-content:center;">
+          <div class="wordmark">
+            <div class="glyph">А</div>
+            <div class="name">Анти<em>Фиш</em></div>
+          </div>
+        </div>
+
+        <div class="fade-item d5" style="margin-top:32px; text-align:center; font-size:24px; color:var(--muted); line-height:1.5;">
+          Направление 10.04.01 «Информационная безопасность»<br/>
+          Профиль «Безопасность автоматизированных систем»
+        </div>
+      </div>
+
+      <div class="fade-item d5" style="display:grid; grid-template-columns:1fr 1fr; gap:60px; padding-top:24px; border-top:1px solid var(--line);">
+        <div>
+          <div class="mono" style="font-size:24px; text-transform:uppercase; letter-spacing:.16em; color:var(--muted); margin-bottom:6px;">Выполнил</div>
+          <div style="font-size:26px; color:var(--ink); font-weight:500;">Назаров Андрей Алексеевич</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="mono" style="font-size:24px; text-transform:uppercase; letter-spacing:.16em; color:var(--muted); margin-bottom:6px;">Научный руководитель</div>
+          <div style="font-size:26px; color:var(--ink); font-weight:500;">Губенков А.А.</div>
+          <div style="font-size:24px; color:var(--muted); margin-top:4px;">доцент каф. ИБС, к.ф.-м.н.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 02 АКТУАЛЬНОСТЬ -->
+  <section data-label="02 Актуальность">
+    <div class="chrome">
+      <div class="topline"></div>
+      <div class="corner"><b>02</b> / 15</div>
+      <div class="fade-item eyebrow">Раздел 1</div>
+      <h2 class="fade-item d1 title">Актуальность</h2>
+      <div class="fade-item d2 subtitle" style="margin-top:8px;">
+        Точность даже наиболее продвинутых средств защиты ограничивается 83 % – есть потенциал для совершенствования.
+      </div>
+
+      <div style="display:grid; grid-template-columns: 1.4fr 1fr; gap:48px; margin-top:40px; flex:1; min-height:0; align-items:stretch;">
+        <div class="zoom-in image-card" style="height:100%; min-height:0; padding:14px; background:#fff; position:relative; overflow:hidden;">
+          <div style="position:absolute; inset:14px;">
+            <canvas id="chart-accuracy"></canvas>
+          </div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:22px;">
+          <div class="fade-item d3" style="padding:24px 28px; background:var(--paper); border-left:4px solid var(--accent); border-radius:4px;">
+            <div class="mono" style="font-size:24px; color:var(--accent); margin-bottom:8px;">МАКСИМУМ</div>
+            <div style="font-family:'Source Serif 4',serif; font-size:48px; color:var(--ink); font-weight:600; line-height:1;">82,22 %</div>
+            <div style="font-size:24px; color:var(--muted); margin-top:6px;">лучший показатель – Sophos</div>
+          </div>
+          <div class="fade-item d4" style="padding:24px 28px; background:var(--paper); border-left:4px solid var(--muted); border-radius:4px;">
+            <div class="mono" style="font-size:24px; color:var(--muted); margin-bottom:8px;">МИНИМУМ</div>
+            <div style="font-family:'Source Serif 4',serif; font-size:48px; color:var(--ink); font-weight:600; line-height:1;">66,99 %</div>
+            <div style="font-size:24px; color:var(--muted); margin-top:6px;">прочие средства защиты</div>
+          </div>
+          <div class="fade-item d5" style="font-size:24px; color:var(--ink-2); line-height:1.4; padding-top:8px;">
+            Традиционные средства защиты демонстрируют снижение точности обнаружения фишинговых атак.
+          </div>
+        </div>
+      </div>
+
+      <div class="fade-item d6" style="margin-top:24px; padding-top:18px; font-size:22px; color:var(--muted); border-top:1px solid var(--line);">
+        Источник: сравнительный анализ точности средств защиты (Accuracy, %).
+      </div>
+    </div>
+  </section>
+
+  <!-- 03 ПРОБЛЕМА -->
+  <section data-label="03 Проблема">
+    <div class="chrome">
+      <div class="topline"></div>
+      <div class="corner"><b>03</b> / 15</div>
+      <div class="fade-item eyebrow">Раздел 1</div>
+      <h2 class="fade-item d1 title">Проблема</h2>
+      <div class="fade-item d2 subtitle" style="margin-top:8px;">
+        Традиционные методы не успевают за новыми фишинговыми ресурсами.
+      </div>
+
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:48px; margin-top:60px; flex:1;">
+        <div class="fade-item d3" style="background:var(--paper); padding:36px 40px; border-radius:4px;">
+          <div class="mono" style="font-size:24px; text-transform:uppercase; letter-spacing:.14em; color:var(--muted); margin-bottom:14px;">Что используется сейчас</div>
+          <div style="font-family:'Source Serif 4',serif; font-size:38px; line-height:1.25; color:var(--ink); font-weight:600; margin-bottom:24px;">
+            Черные списки.<br/>Сигнатуры.<br/>Эвристические правила.
+          </div>
+          <div class="rule" style="margin:18px 0;"></div>
+          <div style="font-size:26px; color:var(--muted); line-height:1.4;">
+            Реакция только на уже известные адреса.
+          </div>
+        </div>
+
+        <div class="fade-item d4" style="padding:36px 40px; border:2px solid var(--accent); border-radius:4px;">
+          <div class="mono" style="font-size:24px; text-transform:uppercase; letter-spacing:.14em; color:var(--accent); margin-bottom:14px;">Поведение фишинга</div>
+          <div style="display:flex; flex-direction:column; gap:18px;">
+            <div style="display:flex; gap:16px; align-items:baseline;">
+              <div class="mono" style="font-size:36px; color:var(--accent); font-weight:600; min-width:90px;">≪ 24ч</div>
+              <div style="font-size:26px; color:var(--ink-2);">Среднее время жизни ресурса</div>
+            </div>
+            <div class="rule"></div>
+            <div style="display:flex; gap:16px; align-items:baseline;">
+              <div class="mono" style="font-size:36px; color:var(--accent); font-weight:600; min-width:90px;">×N</div>
+              <div style="font-size:26px; color:var(--ink-2);">Быстрая смена доменов</div>
+            </div>
+            <div class="rule"></div>
+            <div style="display:flex; gap:16px; align-items:baseline;">
+              <div class="mono" style="font-size:36px; color:var(--accent); font-weight:600; min-width:90px;">⤳</div>
+              <div style="font-size:26px; color:var(--ink-2);">Обход блокировок и фильтров</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="fade-item d6" style="margin-top:48px; font-family:'Source Serif 4',serif; font-style:italic; font-size:32px; color:var(--ink-2); border-top:1px solid var(--line); padding-top:24px;">
+        Нужно адаптивное средство, выявляющее фишинг <b style="color:var(--accent); font-style:normal;">по совокупности признаков</b>, а не только по известным адресам.
+      </div>
+    </div>
+  </section>
+
+  <!-- 04 ЦЕЛЬ И ЗАДАЧИ -->
+  <section data-label="04 Цель и задачи">
+    <div class="chrome">
+      <div class="topline"></div>
+      <div class="corner"><b>04</b> / 15</div>
+      <div class="fade-item eyebrow">Постановка работы</div>
+      <h2 class="fade-item d1 title">Цель и задачи</h2>
+
+      <div class="fade-item d2" style="margin-top:32px; padding:28px 36px; background:var(--accent); color:#fff; border-radius:4px;">
+        <div class="mono" style="font-size:24px; text-transform:uppercase; letter-spacing:.16em; color:rgba(255,255,255,.7); margin-bottom:10px;">Цель</div>
+        <div style="font-family:'Source Serif 4',serif; font-size:32px; line-height:1.3; font-weight:500;">
+          Разработка браузерного расширения для защиты от фишинговых атак с применением методов машинного обучения, обеспечивающего высокую точность обнаружения при минимальном влиянии на производительность браузера.
+        </div>
+      </div>
+
+      <div class="fade-item d3 mono" style="font-size:24px; text-transform:uppercase; letter-spacing:.16em; color:var(--muted); margin:32px 0 18px 0;">Задачи</div>
+
+      <div style="display:flex; flex-direction:column; gap:14px; flex:1;">
+        <div class="fade-item d3" style="display:flex; gap:24px; align-items:flex-start; padding:14px 0; border-bottom:1px solid var(--line);">
+          <div class="mono" style="font-size:30px; color:var(--accent); font-weight:600; min-width:48px;">01</div>
+          <div style="font-size:25px; line-height:1.4; color:var(--ink);">Провести анализ современных методов фишинговых атак и существующих методов защиты.</div>
+        </div>
+        <div class="fade-item d4" style="display:flex; gap:24px; align-items:flex-start; padding:14px 0; border-bottom:1px solid var(--line);">
+          <div class="mono" style="font-size:30px; color:var(--accent); font-weight:600; min-width:48px;">02</div>
+          <div style="font-size:25px; line-height:1.4; color:var(--ink);">Изучить нормативно-правовую и методическую основу обеспечения безопасности веб-серфинга.</div>
+        </div>
+        <div class="fade-item d5" style="display:flex; gap:24px; align-items:flex-start; padding:14px 0; border-bottom:1px solid var(--line);">
+          <div class="mono" style="font-size:30px; color:var(--accent); font-weight:600; min-width:48px;">03</div>
+          <div style="font-size:25px; line-height:1.4; color:var(--ink);">Разработать математическую модель и алгоритм обнаружения фишинговых ресурсов на основе машинного обучения.</div>
+        </div>
+        <div class="fade-item d6" style="display:flex; gap:24px; align-items:flex-start; padding:14px 0; border-bottom:1px solid var(--line);">
+          <div class="mono" style="font-size:30px; color:var(--accent); font-weight:600; min-width:48px;">04</div>
+          <div style="font-size:25px; line-height:1.4; color:var(--ink);">Спроектировать архитектуру средства защиты, включающего клиентскую часть (расширение) и серверную часть (API и модель ИИ).</div>
+        </div>
+        <div class="fade-item d7" style="display:flex; gap:24px; align-items:flex-start; padding:14px 0;">
+          <div class="mono" style="font-size:30px; color:var(--accent); font-weight:600; min-width:48px;">05</div>
+          <div style="font-size:25px; line-height:1.4; color:var(--ink);">Реализовать прототип средства защиты и провести тестирование точности.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 05 ПРИЗНАКИ ФИШИНГА -->
+  <section data-label="05 Признаки фишинга">
+    <div class="chrome">
+      <div class="topline"></div>
+      <div class="corner"><b>05</b> / 15</div>
+      <div class="fade-item eyebrow">Раздел 1 · Теоретические основы</div>
+      <h2 class="fade-item d1 title">Признаки фишинга</h2>
+      <div class="fade-item d2 subtitle" style="margin-top:8px;">
+        Используются для обнаружения вместо опоры на черные списки.
+      </div>
+
+      <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:28px 36px; margin-top:60px; flex:1; align-content:start;">
+        <div class="fade-item d3">
+          <div class="mono" style="font-size:24px; color:var(--accent); margin-bottom:6px;">URL</div>
+          <div style="font-size:30px; color:var(--ink); font-family:'Source Serif 4',serif; font-weight:600;">Особенности адреса</div>
+          <div style="font-size:24px; color:var(--muted); margin-top:6px; line-height:1.4;">длина, спецсимволы, IP вместо домена</div>
+        </div>
+        <div class="fade-item d3">
+          <div class="mono" style="font-size:24px; color:var(--accent); margin-bottom:6px;">DOM</div>
+          <div style="font-size:30px; color:var(--ink); font-family:'Source Serif 4',serif; font-weight:600;">Структура домена</div>
+          <div style="font-size:24px; color:var(--muted); margin-top:6px; line-height:1.4;">поддомены, омоглифы, typosquatting</div>
+        </div>
+        <div class="fade-item d4">
+          <div class="mono" style="font-size:24px; color:var(--accent); margin-bottom:6px;">TXT</div>
+          <div style="font-size:30px; color:var(--ink); font-family:'Source Serif 4',serif; font-weight:600;">Подозрительные ключевые слова</div>
+          <div style="font-size:24px; color:var(--muted); margin-top:6px; line-height:1.4;">«verify», «account», «login», «secure»</div>
+        </div>
+        <div class="fade-item d4">
+          <div class="mono" style="font-size:24px; color:var(--accent); margin-bottom:6px;">FRM</div>
+          <div style="font-size:30px; color:var(--ink); font-family:'Source Serif 4',serif; font-weight:600;">Формы ввода</div>
+          <div style="font-size:24px; color:var(--muted); margin-top:6px; line-height:1.4;">пароли, карты, банковские данные</div>
+        </div>
+        <div class="fade-item d5">
+          <div class="mono" style="font-size:24px; color:var(--accent); margin-bottom:6px;">EXT</div>
+          <div style="font-size:30px; color:var(--ink); font-family:'Source Serif 4',serif; font-weight:600;">iframe и внешние ресурсы</div>
+          <div style="font-size:24px; color:var(--muted); margin-top:6px; line-height:1.4;">встроенные страницы со сторонних доменов</div>
+        </div>
+        <div class="fade-item d5">
+          <div class="mono" style="font-size:24px; color:var(--accent); margin-bottom:6px;">DYN</div>
+          <div style="font-size:30px; color:var(--ink); font-family:'Source Serif 4',serif; font-weight:600;">Динамическое поведение</div>
+          <div style="font-size:24px; color:var(--muted); margin-top:6px; line-height:1.4;">скрытые редиректы, генерация форм через JS</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 06 НОРМАТИВНАЯ БАЗА -->
+  <section data-label="06 Нормативная база">
+    <div class="chrome">
+      <div class="topline"></div>
+      <div class="corner"><b>06</b> / 15</div>
+      <div class="fade-item eyebrow">Раздел 2</div>
+      <h2 class="fade-item d1 title">Нормативная база</h2>
+      <div class="fade-item d2 subtitle" style="margin-top:8px;">
+        Требования формируют проектные решения средства защиты.
+      </div>
+
+      <div style="display:grid; grid-template-columns: 1.05fr 1fr; gap:42px; margin-top:28px; flex:1; min-height:0;">
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <div class="fade-item d3 norm-row">
+            <div class="norm-tag">149-ФЗ</div>
+            <div class="norm-text">Об информации, информационных технологиях и о защите информации</div>
+          </div>
+          <div class="fade-item d3 norm-row">
+            <div class="norm-tag">152-ФЗ</div>
+            <div class="norm-text">О персональных данных</div>
+          </div>
+          <div class="fade-item d4 norm-row">
+            <div class="norm-tag">98-ФЗ</div>
+            <div class="norm-text">О коммерческой тайне</div>
+          </div>
+          <div class="fade-item d4 norm-row">
+            <div class="norm-tag">187-ФЗ</div>
+            <div class="norm-text">О безопасности критической информационной инфраструктуры РФ</div>
+          </div>
+          <div class="fade-item d5 norm-row">
+            <div class="norm-tag">№ 646</div>
+            <div class="norm-text">Доктрина информационной безопасности РФ</div>
+          </div>
+          <div class="fade-item d5 norm-row">
+            <div class="norm-tag">№ 1236</div>
+            <div class="norm-text">Запрет на допуск иностранного ПО при госзакупках</div>
+          </div>
+          <div class="fade-item d6 norm-row">
+            <div class="norm-tag">№ 166</div>
+            <div class="norm-text">Технологическая независимость и безопасность КИИ</div>
+          </div>
+          <div class="fade-item d6 norm-row">
+            <div class="norm-tag">Реестр</div>
+            <div class="norm-text">Единый реестр российских программ для ЭВМ и БД</div>
+          </div>
+          <div class="fade-item d7 norm-row" style="border-bottom:none;">
+            <div class="norm-tag" style="color:var(--safe); border-color:var(--safe);">OWASP</div>
+            <div class="norm-text">WSTG · Cheat Sheet расширений</div>
+          </div>
+        </div>
+
+        <div style="display:flex; flex-direction:column;">
+          <div class="fade-item d3 mono" style="font-size:24px; text-transform:uppercase; letter-spacing:.14em; color:var(--muted); margin-bottom:18px;">Проектные решения</div>
+          <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:14px;">
+            <div class="fade-item d4 sol-card">
+              <div class="sol-mono">01</div>
+              <div class="sol-text">Яндекс Браузер</div>
+            </div>
+            <div class="fade-item d4 sol-card">
+              <div class="sol-mono">02</div>
+              <div class="sol-text">Manifest V3</div>
+            </div>
+            <div class="fade-item d5 sol-card">
+              <div class="sol-mono">03</div>
+              <div class="sol-text">Гибридная клиент-серверная схема</div>
+            </div>
+            <div class="fade-item d5 sol-card">
+              <div class="sol-mono">04</div>
+              <div class="sol-text">HTTPS и кэширование</div>
+            </div>
+            <div class="fade-item d6 sol-card">
+              <div class="sol-mono">05</div>
+              <div class="sol-text">Минимизация обрабатываемых данных</div>
+            </div>
+            <div class="fade-item d6 sol-card">
+              <div class="sol-mono">06</div>
+              <div class="sol-text">Ограниченный набор разрешений</div>
+            </div>
+            <div class="fade-item d7 sol-card">
+              <div class="sol-mono">07</div>
+              <div class="sol-text">Локальное размещение и контроль доступа</div>
+            </div>
+            <div class="fade-item d7 sol-card">
+              <div class="sol-mono">08</div>
+              <div class="sol-text">Ориентация на отечественный контур</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <style>
+      .norm-row{display:grid; grid-template-columns: 130px 1fr; gap:18px; align-items:baseline; padding:8px 0; border-bottom:1px solid var(--line);}
+      .norm-tag{font-family:'JetBrains Mono',monospace; font-size:24px; font-weight:600; color:var(--accent); border:1px solid var(--accent); border-radius:4px; padding:3px 8px; text-align:center; letter-spacing:.02em;}
+      .norm-text{font-size:24px; color:var(--ink-2); line-height:1.3;}
+      .sol-card{display:flex; gap:12px; align-items:center; padding:12px 14px; background:var(--paper); border-radius:4px;}
+      .sol-mono{font-family:'JetBrains Mono',monospace; font-size:24px; color:var(--accent); font-weight:600; min-width:32px;}
+      .sol-text{font-size:24px; color:var(--ink); line-height:1.25;}
+    </style>
+  </section>
+
+  <!-- 07 АнтиФиш — обзор -->
+  <section data-label="07 АнтиФиш">
+    <div class="chrome" style="background:#0E1726; color:#fff;">
+      <div class="topline" style="background:linear-gradient(90deg, #6FA0FF 0 80px, rgba(255,255,255,.18) 80px 100%);"></div>
+      <div class="corner" style="color:rgba(255,255,255,.5);"><b style="color:#fff;">07</b> / 15</div>
+
+      <div class="fade-item eyebrow" style="color:#6FA0FF;">Раздел 3 · Практическая разработка</div>
+
+      <div style="flex:1; display:flex; flex-direction:column; justify-content:center;">
+        <div class="fade-item d1" style="margin-bottom:36px;">
+          <div class="wordmark">
+            <div class="glyph" style="background:#fff; color:var(--accent);">А</div>
+            <div class="name" style="color:#fff;">Анти<em style="color:#6FA0FF;">Фиш</em></div>
+          </div>
+        </div>
+
+        <h2 class="fade-item d2 title" style="color:#fff; font-size:84px; max-width:1100px;">
+          Браузерное расширение,<br/>защищающее от фишинга<br/>с помощью <span style="color:#6FA0FF;">машинного обучения</span>.
+        </h2>
+
+        <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:36px; margin-top:80px;">
+          <div class="fade-item d4">
+            <div class="mono" style="font-size:24px; color:#6FA0FF; letter-spacing:.16em; text-transform:uppercase; margin-bottom:10px;">Архитектура</div>
+            <div style="font-size:28px; color:#fff;">Гибридная клиент-серверная</div>
+          </div>
+          <div class="fade-item d5">
+            <div class="mono" style="font-size:24px; color:#6FA0FF; letter-spacing:.16em; text-transform:uppercase; margin-bottom:10px;">Стандарт</div>
+            <div style="font-size:28px; color:#fff;">Manifest V3 + Flask API</div>
+          </div>
+          <div class="fade-item d6">
+            <div class="mono" style="font-size:24px; color:#6FA0FF; letter-spacing:.16em; text-transform:uppercase; margin-bottom:10px;">Точность модели</div>
+            <div style="font-size:28px; color:#fff;">96,6 % Accuracy · MCC 0,933</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 08 АРХИТЕКТУРА -->
+  <section data-label="08 Архитектура">
+    <div class="chrome" style="padding:60px 80px 56px 80px;">
+      <div class="topline" style="left:80px;"></div>
+      <div class="corner"><b>08</b> / 15</div>
+      <div class="fade-item eyebrow">Раздел 3</div>
+      <h2 class="fade-item d1 title">Архитектура</h2>
+      <div class="fade-item d2 subtitle" style="margin-top:6px;">
+        Клиент – расширение Manifest V3. Сервер – Python + Flask + ML (XGBoost).
+      </div>
+
+      <div class="fade-item d3" style="flex:1; margin-top:28px; min-height:0; display:flex;">
+        <svg viewBox="0 0 1280 600" preserveAspectRatio="xMidYMid meet" style="width:100%; height:100%;" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="#2A3447"/>
+            </marker>
+            <marker id="arrAcc" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="#1E3A8A"/>
+            </marker>
+          </defs>
+
+          <style>
+            .arch-node-title{font: 600 15px 'Inter',sans-serif; fill:#0E1726;}
+            .arch-node-sub{font: 400 12px 'Inter',sans-serif; fill:#2A3447;}
+            .arch-node-sub-light{font: 400 12px 'Inter',sans-serif; fill:#E7ECF8;}
+            .arch-node-title-light{font: 600 15px 'Inter',sans-serif; fill:#fff;}
+            .arch-group-title{font: 500 11px 'JetBrains Mono',monospace; fill:#6B7689; letter-spacing:.18em; text-transform:uppercase;}
+            .arch-edge-label{font: 500 12px 'JetBrains Mono',monospace; fill:#1E3A8A;}
+            .arch-edge{stroke:#2A3447; stroke-width:1.5; fill:none;}
+            .arch-edge-acc{stroke:#1E3A8A; stroke-width:1.8; fill:none;}
+          </style>
+
+          <!-- BROWSER group -->
+          <rect x="220" y="40" width="690" height="520" rx="8" fill="#F7F8FB" stroke="#D9DEE7" stroke-width="1.5"/>
+          <text x="240" y="68" class="arch-group-title">Браузер · Chrome</text>
+
+          <!-- SERVER group -->
+          <rect x="950" y="40" width="300" height="520" rx="8" fill="#EEF2FF" stroke="#D9DEE7" stroke-width="1.5"/>
+          <text x="970" y="68" class="arch-group-title">Сервер · API</text>
+
+          <!-- NAV (dark) -->
+          <g>
+            <rect x="30" y="200" width="170" height="120" rx="6" fill="#0E1726"/>
+            <text x="115" y="232" class="arch-node-title-light" text-anchor="middle">События навигации</text>
+            <text x="115" y="258" class="arch-node-sub-light" text-anchor="middle">onBeforeNavigate</text>
+            <text x="115" y="276" class="arch-node-sub-light" text-anchor="middle">onCommitted</text>
+            <text x="115" y="294" class="arch-node-sub-light" text-anchor="middle">tabs API</text>
+          </g>
+
+          <!-- Service Worker (центр) -->
+          <g>
+            <rect x="250" y="220" width="220" height="160" rx="6" fill="#fff" stroke="#1E3A8A" stroke-width="2"/>
+            <rect x="250" y="220" width="4" height="160" fill="#1E3A8A"/>
+            <text x="360" y="248" class="arch-node-title" text-anchor="middle">Service Worker</text>
+            <text x="360" y="276" class="arch-node-sub" text-anchor="middle">обработка событий</text>
+            <text x="360" y="294" class="arch-node-sub" text-anchor="middle">изменение URL</text>
+            <text x="360" y="312" class="arch-node-sub" text-anchor="middle">кэш результатов</text>
+            <text x="360" y="330" class="arch-node-sub" text-anchor="middle">запрос к API</text>
+          </g>
+
+          <!-- Cache (пунктир, сверху) -->
+          <g>
+            <rect x="270" y="80" width="180" height="90" rx="6" fill="#fff" stroke="#6B7689" stroke-width="1.5" stroke-dasharray="6 4"/>
+            <text x="360" y="108" class="arch-node-title" text-anchor="middle">Кэш</text>
+            <text x="360" y="130" class="arch-node-sub" text-anchor="middle">Cache / localStorage</text>
+            <text x="360" y="148" class="arch-node-sub" text-anchor="middle">TTL: 10–30 мин</text>
+          </g>
+
+          <!-- Content Script (справа сверху) -->
+          <g>
+            <rect x="540" y="100" width="220" height="120" rx="6" fill="#fff" stroke="#334155" stroke-width="1.5"/>
+            <text x="650" y="128" class="arch-node-title" text-anchor="middle">Content Script</text>
+            <text x="650" y="152" class="arch-node-sub" text-anchor="middle">DOM / HTML</text>
+            <text x="650" y="170" class="arch-node-sub" text-anchor="middle">сбор признаков</text>
+            <text x="650" y="188" class="arch-node-sub" text-anchor="middle">инъекция / блокировка</text>
+          </g>
+
+          <!-- Popup (справа в центре) -->
+          <g>
+            <rect x="540" y="250" width="220" height="100" rx="6" fill="#fff" stroke="#334155" stroke-width="1.5"/>
+            <text x="650" y="278" class="arch-node-title" text-anchor="middle">Popup / UI</text>
+            <text x="650" y="302" class="arch-node-sub" text-anchor="middle">статус проверки</text>
+            <text x="650" y="320" class="arch-node-sub" text-anchor="middle">оценка риска · настройки</text>
+          </g>
+
+          <!-- Warning (снизу справа) -->
+          <g>
+            <rect x="540" y="400" width="340" height="120" rx="6" fill="#FEE2E2" stroke="#B0203A" stroke-width="1.5"/>
+            <text x="710" y="430" class="arch-node-title" text-anchor="middle" style="fill:#B0203A;">⚠ Предупреждение</text>
+            <text x="710" y="456" class="arch-node-sub" text-anchor="middle" style="fill:#7F1224;">блокировка страницы</text>
+            <text x="710" y="476" class="arch-node-sub" text-anchor="middle" style="fill:#7F1224;">показ blocked.html</text>
+          </g>
+
+          <!-- API -->
+          <g>
+            <rect x="980" y="120" width="240" height="120" rx="6" fill="#fff" stroke="#334155" stroke-width="1.5"/>
+            <text x="1100" y="148" class="arch-node-title" text-anchor="middle">REST API</text>
+            <text x="1100" y="172" class="arch-node-sub" text-anchor="middle">POST /predict</text>
+            <text x="1100" y="190" class="arch-node-sub" text-anchor="middle">валидация + auth</text>
+          </g>
+
+          <!-- ML -->
+          <g>
+            <rect x="980" y="320" width="240" height="120" rx="6" fill="#F3E8FF" stroke="#7E22CE" stroke-width="1.5"/>
+            <text x="1100" y="348" class="arch-node-title" text-anchor="middle">ML-модель · XGBoost</text>
+            <text x="1100" y="372" class="arch-node-sub" text-anchor="middle">классификация</text>
+            <text x="1100" y="390" class="arch-node-sub" text-anchor="middle">оценка уверенности</text>
+          </g>
+
+          <!-- ===== СВЯЗИ ===== -->
+          <!-- ① NAV -> SW -->
+          <line x1="200" y1="260" x2="248" y2="290" class="arch-edge-acc" marker-end="url(#arrAcc)"/>
+          <text x="208" y="252" class="arch-edge-label">① навигация</text>
+
+          <!-- кэш ↔ SW (двунаправленная вертикаль) -->
+          <line x1="345" y1="170" x2="345" y2="218" class="arch-edge" marker-end="url(#arr)"/>
+          <line x1="375" y1="218" x2="375" y2="170" class="arch-edge" marker-end="url(#arr)"/>
+          <text x="395" y="200" class="arch-edge-label" style="fill:#6B7689;">кэш</text>
+
+          <!-- ② SW <-> CS -->
+          <path d="M 470 260 C 510 260 520 180 538 175" class="arch-edge-acc" marker-end="url(#arrAcc)"/>
+          <path d="M 540 200 C 510 220 500 280 472 290" class="arch-edge" marker-end="url(#arr)"/>
+          <text x="486" y="234" class="arch-edge-label">② признаки</text>
+
+          <!-- ③ SW -> Popup -->
+          <line x1="470" y1="305" x2="538" y2="298" class="arch-edge-acc" marker-end="url(#arrAcc)"/>
+          <text x="478" y="320" class="arch-edge-label">③ результат</text>
+
+          <!-- ④ SW -> API -->
+          <path d="M 470 340 C 700 380 820 200 978 178" class="arch-edge-acc" marker-end="url(#arrAcc)"/>
+          <text x="730" y="320" class="arch-edge-label">④ POST /predict</text>
+
+          <!-- ⑤ API -> SW -->
+          <path d="M 980 200 C 820 230 700 360 472 350" class="arch-edge" marker-end="url(#arr)"/>
+          <text x="730" y="372" class="arch-edge-label" style="fill:#2A3447;">⑤ JSON</text>
+
+          <!-- API <-> ML (внутри сервера) -->
+          <line x1="1080" y1="240" x2="1080" y2="318" class="arch-edge" marker-end="url(#arr)"/>
+          <line x1="1120" y1="318" x2="1120" y2="240" class="arch-edge" marker-end="url(#arr)"/>
+
+          <!-- ⑥ CS -> Warning -->
+          <path d="M 650 220 C 650 320 650 380 650 398" class="arch-edge-acc" marker-end="url(#arrAcc)" stroke-dasharray="0"/>
+          <text x="660" y="320" class="arch-edge-label">⑥ инъекция</text>
+        </svg>
+      </div>
+
+      <div class="fade-item d4" style="margin-top:18px; display:flex; gap:28px; font-size:22px; color:var(--muted); border-top:1px solid var(--line); padding-top:14px;">
+        <div><span style="display:inline-block; width:14px; height:14px; background:#0E1726; border-radius:2px; vertical-align:middle; margin-right:8px;"></span>Внешние события</div>
+        <div><span style="display:inline-block; width:14px; height:14px; background:#F7F8FB; border:1px solid #D9DEE7; border-radius:2px; vertical-align:middle; margin-right:8px;"></span>Браузер</div>
+        <div><span style="display:inline-block; width:14px; height:14px; background:#EEF2FF; border:1px solid #D9DEE7; border-radius:2px; vertical-align:middle; margin-right:8px;"></span>Сервер</div>
+        <div><span style="display:inline-block; width:14px; height:14px; background:#F3E8FF; border:1px solid #7E22CE; border-radius:2px; vertical-align:middle; margin-right:8px;"></span>ML-модель</div>
+        <div><span style="display:inline-block; width:14px; height:14px; background:#FEE2E2; border:1px solid #B0203A; border-radius:2px; vertical-align:middle; margin-right:8px;"></span>Блокировка</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 09 АЛГОРИТМ -->
+  <section data-label="09 Алгоритм работы">
+    <div class="chrome" style="padding:60px 80px 56px 80px;">
+      <div class="topline" style="left:80px;"></div>
+      <div class="corner"><b>09</b> / 15</div>
+      <div class="fade-item eyebrow">Раздел 3</div>
+      <h2 class="fade-item d1 title">Алгоритм работы</h2>
+      <div class="fade-item d2 subtitle" style="margin-top:6px;">
+        Многоступенчатая проверка: от быстрых списков до анализа содержимого.
+      </div>
+
+      <div style="display:grid; grid-template-columns: 1fr 360px; gap:36px; margin-top:24px; flex:1; min-height:0;">
+        <div class="zoom-in image-card fill" style="height:100%; padding:20px; min-height:0;">
+          <img src="assets/diagram-algorithm.png" alt="Блок-схема алгоритма"/>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:10px; justify-content:center; min-height:0; overflow:hidden;">
+          <div class="fade-item d3 algo-step">
+            <div class="algo-num">01</div>
+            <div>
+              <div class="algo-title">Извлечение признаков</div>
+              <div class="algo-sub">URL, DOM, формы, скрипты</div>
+            </div>
+          </div>
+          <div class="fade-item d4 algo-step">
+            <div class="algo-num">02</div>
+            <div>
+              <div class="algo-title">Проверка кэша</div>
+              <div class="algo-sub">локальное хранилище · TTL 10–30 мин</div>
+            </div>
+          </div>
+          <div class="fade-item d5 algo-step">
+            <div class="algo-num">03</div>
+            <div>
+              <div class="algo-title">Запрос к серверу</div>
+              <div class="algo-sub">POST /predict</div>
+            </div>
+          </div>
+          <div class="fade-item d6 algo-step">
+            <div class="algo-num">04</div>
+            <div>
+              <div class="algo-title">ML-классификация</div>
+              <div class="algo-sub">легитимный / фишинговый</div>
+            </div>
+          </div>
+          <div class="fade-item d7 algo-step" style="background:#FDEEF0; border-left-color:var(--danger);">
+            <div class="algo-num" style="color:var(--danger);">05</div>
+            <div>
+              <div class="algo-title">Блокировка</div>
+              <div class="algo-sub">показ blocked.html</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <style>
+      .algo-step{display:flex; gap:14px; align-items:flex-start; padding:10px 14px; background:var(--paper); border-radius:4px; border-left:3px solid var(--accent);}
+      .algo-num{font-family:'JetBrains Mono',monospace; font-size:26px; color:var(--accent); font-weight:600; min-width:40px;}
+      .algo-title{font-size:24px; color:var(--ink); font-weight:600; margin-bottom:2px;}
+      .algo-sub{font-size:24px; color:var(--muted); line-height:1.25;}
+    </style>
+  </section>
+
+  <!-- 10 МЕТРИКИ -->
+  <section data-label="10 Метрики качества">
+    <div class="chrome">
+      <div class="topline"></div>
+      <div class="corner"><b>10</b> / 15</div>
+      <div class="fade-item eyebrow">Раздел 3 · Оценка модели</div>
+      <h2 class="fade-item d1 title">Метрики качества</h2>
+      <div class="fade-item d2 subtitle" style="margin-top:8px;">
+        Подтверждают применимость подхода для задачи обнаружения фишинга.
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:26px; margin-top:64px; flex:1; justify-content:center;">
+
+        <div class="fade-item d3 metric-row">
+          <div class="metric-name">Accuracy</div>
+          <div class="metric-track"><div class="metric-fill grow-bar d1" style="width:96.6%;"></div></div>
+          <div class="metric-val">96,6 %</div>
+        </div>
+
+        <div class="fade-item d4 metric-row">
+          <div class="metric-name">Precision</div>
+          <div class="metric-track"><div class="metric-fill grow-bar d2" style="width:97.2%;"></div></div>
+          <div class="metric-val">97,2 %</div>
+        </div>
+
+        <div class="fade-item d5 metric-row">
+          <div class="metric-name">Recall</div>
+          <div class="metric-track"><div class="metric-fill grow-bar d3" style="width:96.0%;"></div></div>
+          <div class="metric-val">96,0 %</div>
+        </div>
+
+        <div class="fade-item d6 metric-row">
+          <div class="metric-name">F1-score</div>
+          <div class="metric-track"><div class="metric-fill grow-bar d4" style="width:96.6%;"></div></div>
+          <div class="metric-val">96,6 %</div>
+        </div>
+
+        <div class="fade-item d7 metric-row">
+          <div class="metric-name">MCC</div>
+          <div class="metric-track"><div class="metric-fill grow-bar d5" style="width:93.3%;"></div></div>
+          <div class="metric-val">0,933</div>
+        </div>
+
+      </div>
+
+      <div class="fade-item d8" style="margin-top:auto; padding:18px 24px; background:var(--accent-soft); border-radius:4px; font-size:24px; color:var(--ink-2);">
+        Превосходит точность лучших существующих средств защиты <b style="color:var(--accent);">(82,22 %)</b> на 14,4 п.п.
+      </div>
+    </div>
+
+    <style>
+      .metric-row{display:grid; grid-template-columns: 240px 1fr 200px; align-items:center; gap:32px;}
+      .metric-name{font-family:'Source Serif 4',serif; font-size:34px; font-weight:600; color:var(--ink);}
+      .metric-track{height:20px; background:var(--paper); border:1px solid var(--line); border-radius:2px; overflow:hidden; position:relative;}
+      .metric-fill{height:100%; background:var(--accent);}
+      .metric-val{font-family:'JetBrains Mono',monospace; font-size:40px; color:var(--ink); font-weight:500; text-align:right; font-variant-numeric:tabular-nums;}
+    </style>
+  </section>
+
+  <!-- 11 ИНТЕРФЕЙС РАСШИРЕНИЯ -->
+  <section data-label="11 Расширение">
+    <div class="chrome">
+      <div class="topline"></div>
+      <div class="corner"><b>11</b> / 15</div>
+      <div class="fade-item eyebrow">Раздел 3 · Клиентская часть</div>
+      <h2 class="fade-item d1 title">Расширение</h2>
+      <div class="fade-item d2 subtitle" style="margin-top:8px;">
+        Попап статуса проверки и страница блокировки опасного ресурса.
+      </div>
+
+      <div style="display:grid; grid-template-columns: 0.7fr 1fr 1.1fr; gap:36px; margin-top:48px; flex:1; min-height:0;">
+        <div class="fade-item d3" style="display:flex; flex-direction:column; gap:12px; min-height:0;">
+          <div class="mono" style="font-size:24px; color:var(--accent); letter-spacing:.14em;">01 · POPUP</div>
+          <div class="image-card contain" style="flex:1; min-height:0; background:var(--paper);">
+            <img src="assets/ext-popup.png" alt="Попап расширения" style="max-height:580px;"/>
+          </div>
+          <div style="font-size:24px; color:var(--muted); line-height:1.35;">Статус вкладки и быстрые действия</div>
+        </div>
+
+        <div class="fade-item d4" style="display:flex; flex-direction:column; gap:12px; min-height:0;">
+          <div class="mono" style="font-size:24px; color:var(--accent); letter-spacing:.14em;">02 · BLOCK PAGE</div>
+          <div class="image-card contain" style="flex:1; min-height:0; background:var(--paper);">
+            <img src="assets/ext-block.png" alt="Страница блокировки" style="max-height:580px;"/>
+          </div>
+          <div style="font-size:24px; color:var(--muted); line-height:1.35;">Предупреждение о фишинге</div>
+        </div>
+
+        <div class="fade-item d5" style="display:flex; flex-direction:column; gap:12px; min-height:0;">
+          <div class="mono" style="font-size:24px; color:var(--accent); letter-spacing:.14em;">03 · НАСТРОЙКИ</div>
+          <div class="image-card contain" style="flex:1; min-height:0; background:var(--paper);">
+            <img src="assets/ext-settings-detection.png" alt="Настройки расширения" style="max-height:580px;"/>
+          </div>
+          <div style="font-size:24px; color:var(--muted); line-height:1.35;">Чувствительность и режим проверки</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 12 СЕРВЕРНАЯ ПАНЕЛЬ -->
+  <section data-label="12 Серверная панель">
+    <div class="chrome">
+      <div class="topline"></div>
+      <div class="corner"><b>12</b> / 15</div>
+      <div class="fade-item eyebrow">Раздел 3 · Серверная часть</div>
+      <h2 class="fade-item d1 title">Серверная панель</h2>
+      <div class="fade-item d2 subtitle" style="margin-top:8px;">
+        Управление списками, ключами доступа и состоянием модели.
+      </div>
+
+      <div style="display:grid; grid-template-rows: 1.4fr 1fr; gap:28px; margin-top:40px; flex:1;">
+        <div class="fade-item d3 image-card" style="background:#fff;">
+          <img src="assets/admin-overview.png" alt="Главная админ-панели" style="width:100%; height:100%; object-fit:cover; object-position:top center;"/>
+        </div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:28px;">
+          <div class="fade-item d4 image-card" style="background:#fff;">
+            <img src="assets/admin-api-keys.png" alt="API-ключи" style="width:100%; height:100%; object-fit:cover; object-position:top center;"/>
+          </div>
+          <div class="fade-item d5 image-card" style="background:#fff;">
+            <img src="assets/admin-licenses.png" alt="Лицензионные ключи" style="width:100%; height:100%; object-fit:cover; object-position:top center;"/>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 13 ТЕСТИРОВАНИЕ -->
+  <section data-label="13 Тестирование">
+    <div class="chrome">
+      <div class="topline"></div>
+      <div class="corner"><b>13</b> / 15</div>
+      <div class="fade-item eyebrow">Раздел 3 · Проверка</div>
+      <h2 class="fade-item d1 title">Тестирование</h2>
+      <div class="fade-item d2 subtitle" style="margin-top:8px;">
+        Все компоненты прототипа проверены и работают корректно.
+      </div>
+
+      <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:18px 36px; margin-top:60px; flex:1; align-content:start;">
+        <div class="fade-item d3 check-row"><span class="check">✓</span><span>Серверная часть</span></div>
+        <div class="fade-item d3 check-row"><span class="check">✓</span><span>API-методы</span></div>
+        <div class="fade-item d4 check-row"><span class="check">✓</span><span>Браузерное расширение</span></div>
+        <div class="fade-item d4 check-row"><span class="check">✓</span><span>Страница блокировки</span></div>
+        <div class="fade-item d5 check-row"><span class="check">✓</span><span>Страница настроек</span></div>
+        <div class="fade-item d5 check-row"><span class="check">✓</span><span>Кэширование</span></div>
+        <div class="fade-item d6 check-row"><span class="check">✓</span><span>Взаимодействие клиент-сервер</span></div>
+        <div class="fade-item d6 check-row"><span class="check">✓</span><span>Корректность вердиктов</span></div>
+      </div>
+
+      <div class="fade-item d7" style="margin-top:auto; padding:28px 32px; background:var(--paper); border-left:4px solid var(--safe); font-size:30px; line-height:1.4; color:var(--ink-2);">
+        Прототип <b style="color:var(--ink);">корректно проверяет</b> ресурсы, отображает статус и блокирует доступ к фишингу.
+      </div>
+    </div>
+    <style>
+      .check-row{display:flex; align-items:center; gap:18px; padding:14px 0; border-bottom:1px solid var(--line); font-size:28px; color:var(--ink);}
+      .check-row .check{
+        width:36px;height:36px;border-radius:50%;
+        background:var(--safe); color:#fff;
+        display:inline-flex;align-items:center;justify-content:center;
+        font-size:24px; font-weight:600; line-height:1;
+      }
+    </style>
+  </section>
+
+  <!-- 14 ЭКОНОМИКА -->
+  <section data-label="14 Экономика">
+    <div class="chrome">
+      <div class="topline"></div>
+      <div class="corner"><b>14</b> / 15</div>
+      <div class="fade-item eyebrow">Раздел 5</div>
+      <h2 class="fade-item d1 title">Экономическое обоснование</h2>
+      <div class="fade-item d2 subtitle" style="margin-top:8px;">
+        Внедрение на 50 рабочих мест выгоднее покупки готового аналога.
+      </div>
+
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:36px; margin-top:64px; flex:1;">
+        <div class="fade-item d3" style="background:var(--paper); padding:48px 40px; border-radius:4px; display:flex; flex-direction:column; justify-content:center;">
+          <div class="mono" style="font-size:24px; text-transform:uppercase; letter-spacing:.16em; color:var(--muted); margin-bottom:18px;">Затраты на разработку</div>
+          <div style="font-family:'Source Serif 4',serif; font-size:96px; line-height:1; color:var(--ink); font-weight:600; font-variant-numeric:tabular-nums;">
+            136 936
+          </div>
+          <div style="font-size:28px; color:var(--muted); margin-top:10px;">рублей</div>
+        </div>
+
+        <div class="fade-item d4" style="background:var(--accent); color:#fff; padding:48px 40px; border-radius:4px; display:flex; flex-direction:column; justify-content:center;">
+          <div class="mono" style="font-size:24px; text-transform:uppercase; letter-spacing:.16em; color:rgba(255,255,255,.7); margin-bottom:18px;">Экономический эффект</div>
+          <div style="font-family:'Source Serif 4',serif; font-size:96px; line-height:1; font-weight:600; font-variant-numeric:tabular-nums;">
+            +37 914
+          </div>
+          <div style="font-size:28px; color:rgba(255,255,255,.85); margin-top:10px;">рублей при 50 рабочих местах</div>
+        </div>
+      </div>
+
+      <div class="fade-item d6" style="margin-top:48px; font-size:28px; color:var(--ink-2); text-align:center; font-family:'Source Serif 4',serif; font-style:italic;">
+        Собственная разработка экономически выгоднее приобретения готового решения.
+      </div>
+    </div>
+  </section>
+
+  <!-- 15 ЗАКЛЮЧЕНИЕ -->
+  <section data-label="15 Заключение">
+    <div class="chrome">
+      <div class="topline"></div>
+      <div class="corner"><b>15</b> / 15</div>
+      <div class="fade-item eyebrow">Заключение</div>
+      <h2 class="fade-item d1 title">Цель достигнута</h2>
+      <div class="fade-item d2 subtitle" style="margin-top:8px; max-width:1180px;">
+        Разработано браузерное расширение для защиты от фишинговых атак с применением методов машинного обучения.
+      </div>
+
+      <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:36px; margin-top:64px;">
+        <div class="fade-item d3" style="border-top:3px solid var(--accent); padding-top:18px;">
+          <div class="mono" style="font-size:24px; color:var(--accent); margin-bottom:8px;">РЕЗУЛЬТАТ</div>
+          <div style="font-size:26px; color:var(--ink); line-height:1.35;">Прототип «АнтиФиш» с гибридной архитектурой и ML-моделью</div>
+        </div>
+        <div class="fade-item d4" style="border-top:3px solid var(--accent); padding-top:18px;">
+          <div class="mono" style="font-size:24px; color:var(--accent); margin-bottom:8px;">КАЧЕСТВО</div>
+          <div style="font-size:26px; color:var(--ink); line-height:1.35;">96,6 % Accuracy, MCC 0,933 – подтвержденная применимость подхода</div>
+        </div>
+        <div class="fade-item d5" style="border-top:3px solid var(--accent); padding-top:18px;">
+          <div class="mono" style="font-size:24px; color:var(--accent); margin-bottom:8px;">ПРИМЕНЕНИЕ</div>
+          <div style="font-size:26px; color:var(--ink); line-height:1.35;">Дополнительный механизм защиты веб-серфинга в организациях</div>
+        </div>
+      </div>
+
+      <div class="fade-item d7" style="margin-top:auto; padding-top:48px; border-top:1px solid var(--line); display:flex; justify-content:space-between; align-items:flex-end;">
+        <div>
+          <div style="font-family:'Source Serif 4',serif; font-size:56px; color:var(--ink); font-weight:600; line-height:1.1;">Спасибо за внимание</div>
+          <div style="font-size:26px; color:var(--muted); margin-top:10px;">Готов ответить на вопросы.</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="wordmark">
+            <div class="glyph">А</div>
+            <div class="name">Анти<em>Фиш</em></div>
+          </div>
+          <div class="mono" style="font-size:24px; color:var(--muted); margin-top:14px;">Назаров А.А. · СГТУ · 2026</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</deck-stage>
+
+<script src="deck-stage.js"></script>
+<script>
+  // Chart on slide 02 — render only when slide is active so canvas has real dimensions.
+  (function(){
+    let chart = null;
+    function build(){
+      const el = document.getElementById('chart-accuracy');
+      if (!el || typeof Chart === 'undefined') return false;
+      const rect = el.getBoundingClientRect();
+      if (rect.width < 10 || rect.height < 10) return false;
+      if (chart) return true;
+      const labels = ["Sophos","Fortinet","Webroot","Kaspersky","BitDefender","Forcepoint","Другие"];
+      const values = [82.22, 77.80, 77.36, 77.01, 75.00, 73.42, 66.99];
+      const valueLabels = {
+        id: "valueLabels",
+        afterDatasetsDraw(c) {
+          const ctx = c.ctx;
+          const meta = c.getDatasetMeta(0);
+          ctx.save();
+          ctx.textAlign = "center"; ctx.textBaseline = "bottom";
+          ctx.font = "600 16px 'JetBrains Mono', monospace";
+          ctx.fillStyle = "#0E1726";
+          meta.data.forEach((bar, i) => {
+            const val = c.data.datasets[0].data[i];
+            ctx.fillText(`${val.toFixed(2)}%`, bar.x, bar.y - 8);
+          });
+          ctx.restore();
+        }
+      };
+      chart = new Chart(el.getContext('2d'), {
+        type: "bar",
+        data: { labels, datasets: [{
+          data: values,
+          backgroundColor: ["#1E3A8A","#2952cc","#3d5af1","#4c6ef5","#5c7cfa","#748ffc","#d0d7e2"],
+          borderRadius: 6, borderSkipped: false
+        }]},
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          animation: { duration: 900, easing: 'easeOutQuart' },
+          plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: { label: (c) => `${c.raw.toFixed(2)}%` } }
+          },
+          scales: {
+            y: { beginAtZero: true, max: 100,
+              ticks: { font: { size: 14 }, callback: (v) => `${v}%` },
+              title: { display: true, text: "Точность (Accuracy), %", font: { size: 15, weight: '500' } },
+              grid: { color: "#e7ebf1" } },
+            x: { title: { display: true, text: "Сервисы проверки ссылок", font: { size: 15, weight: '500' } },
+              grid: { display: false },
+              ticks: { font: { size: 14 }, autoSkip: false, maxRotation: 30, minRotation: 15 } }
+          }
+        },
+        plugins: [valueLabels]
+      });
+      return true;
+    }
+    window.__buildAccuracyChart = build;
+  })();
+</script>
+<script>
+  (function(){
+    const stage = document.querySelector('deck-stage');
+    if (!stage) return;
+    const slides = Array.from(stage.children).filter(n => n.tagName === 'SECTION');
+
+    function setActive(i){
+      slides.forEach((s, k) => s.classList.toggle('is-active', k === i));
+      if (i === 1 && window.__buildAccuracyChart) {
+        // Try a few times — slide may still be transitioning to non-zero size.
+        let tries = 0;
+        const tick = () => {
+          if (window.__buildAccuracyChart()) return;
+          if (++tries < 20) setTimeout(tick, 80);
+        };
+        tick();
+      }
+    }
+
+    let idx = 0;
+    try {
+      const m = location.hash.match(/(\d+)/);
+      if (m) idx = Math.max(0, Math.min(slides.length-1, parseInt(m[1],10) - 1));
+    } catch(e){}
+    setActive(idx);
+
+    window.addEventListener('hashchange', () => {
+      const m = location.hash.match(/(\d+)/);
+      if (m){
+        const i = Math.max(0, Math.min(slides.length-1, parseInt(m[1],10) - 1));
+        setActive(i);
+      }
+    });
+
+    window.addEventListener('message', (e) => {
+      if (e.data && typeof e.data.slideIndexChanged === 'number'){
+        setActive(e.data.slideIndexChanged);
+      }
+    });
+  })();
+</script>
+</body>
+</html>
